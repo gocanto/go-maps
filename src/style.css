@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --go-blue: #00ADD8;
+  --go-black: #202224;
+  --bg-color: #f8f9fa;
+  --slot-empty: #eeeeee;
+  --slot-filled: #81c784;
+  --accent: #E91E63;
+  --overflow: #ffb74d;
+  --highlight: #fff9c4;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s;
+}
+
+/* Custom styles for bucket visualization */
+.slot-dot {
+  width: 10px;
+  height: 10px;
+  background-color: var(--slot-empty);
+  border-radius: 2px;
+  margin: 0 auto;
+}
+
+.slot-dot.filled {
+  background-color: var(--slot-filled);
+}
+
+.overflow-link {
+  width: 2px;
+  height: 10px;
+  background: var(--go-black);
+}
+
+.bit-hob {
+  color: var(--accent);
+  font-weight: bold;
+  border-bottom: 2px solid var(--accent);
+}
+
+.bit-lob {
+  color: var(--go-blue);
+  font-weight: bold;
+  border-bottom: 2px solid var(--go-blue);
+}
+
+/* Memory block styles */
+.tophash-blk {
+  background: #ffebee;
+  border-color: #ef9a9a;
+}
+
+.key-blk {
+  background: #e3f2fd;
+  border-color: #90caf9;
+}
+
+.val-blk {
+  background: #e8f5e9;
+  border-color: #a5d6a7;
+}
+
+.overflow-blk {
+  background: #f3e5f5;
+  border-color: #ce93d8;
+  max-width: 80px;
+}
