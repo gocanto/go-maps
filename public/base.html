@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Go Map Visualizer</title>
+    <style>
+        :root {
+            --go-blue: #00ADD8;
+            --go-black: #202224;
+            --bg-color: #f8f9fa;
+            --slot-empty: #eeeeee;
+            --slot-filled: #81c784;
+            --accent: #E91E63;
+            --overflow: #ffb74d;
+            --highlight: #fff9c4;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- INFO PANEL (EXPLANATIONS) --- */
+        .info-panel {
+            width: 100%;
+            max-width: 1200px;
+            background: #333;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            margin-bottom: 20px;
+        }
+
+        /* --- CONTROL PANEL --- */
+        .controls {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            border-top: 4px solid var(--go-blue);
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.1s;
+            color: white;
+            font-size: 0.9rem;
+        }
+        button:active { transform: scale(0.96); }
+        .btn-add { background-color: #2e7d32; }
+        .btn-del { background-color: #c62828; }
+        .btn-grow { background-color: var(--go-black); }
+        .btn-reset { background-color: #757575; }
+
+        /* --- MAIN LAYOUT --- */
+        .main-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            max-width: 1300px;
+            width: 100%;
+        }
+
+        /* --- LEFT: HMAP STRUCT --- */
+        .hmap-box {
+            background: white;
+            border: 2px solid var(--go-black);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.1);
+        }
+        .struct-header {
+            background: var(--go-black);
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .struct-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: help;
+            transition: background 0.2s;
+        }
+        .struct-field:hover { background: var(--highlight); }
+        .struct-field:last-child { border-bottom: none; }
+        .val-dynamic { font-family: monospace; font-weight: bold; color: var(--go-blue); }
+
+        /* --- RIGHT: HASH VISUAL & BUCKETS --- */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Hash Visualizer */
+        .hash-visual {
+            background: white;
+            padding: 15px;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-family: monospace;
+        }
+        .hash-bits { font-size: 1.1rem; letter-spacing: 1px; }
+        .bit-hob { color: var(--accent); font-weight: bold; border-bottom: 2px solid var(--accent); }
+        .bit-lob { color: var(--go-blue); font-weight: bold; border-bottom: 2px solid var(--go-blue); }
+        .hash-label { font-family: sans-serif; font-size: 0.8rem; color: #666; margin-left: auto;}
+
+        /* Buckets Grid */
+        .buckets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+        }
+
+        .bucket-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .bucket {
+            width: 100px;
+            background: white;
+            border: 2px solid #ccc;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .bucket:hover { border-color: var(--go-blue); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .bucket.selected { border-color: var(--go-blue); background-color: #e1f5fe; transform: scale(1.05); box-shadow: 0 0 0 3px rgba(0,173,216,0.3); }
+        .bucket.overflow { border-color: var(--overflow); background: #fff8e1; }
+
+        .bucket-title { font-size: 0.75rem; text-align: center; margin-bottom: 5px; color: #666; font-weight: bold; }
+
+        /* Mini Slots inside Bucket Cards */
+        .slots-mini {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 3px;
+        }
+        .slot-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--slot-empty);
+            border-radius: 2px;
+            margin: 0 auto;
+        }
+        .slot-dot.filled { background-color: var(--slot-filled); }
+
+        .overflow-link {
+            width: 3px;
+            height: 20px;
+            background: var(--go-black);
+            margin: 0 auto;
+        }
+
+        /* --- BOTTOM: X-RAY VIEW --- */
+        .xray-container {
+            grid-column: 1 / -1;
+            background: white;
+            border: 2px solid var(--go-blue);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+
+        .memory-layout {
+            display: flex;
+            gap: 4px;
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+        .mem-block {
+            border: 1px solid #999;
+            flex: 1;
+            min-width: 120px;
+        }
+        .mem-header {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 5px;
+            text-align: center;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            font-weight: bold;
+        }
+        .tophash-blk { background: #ffebee; border-color: #ef9a9a; }
+        .key-blk { background: #e3f2fd; border-color: #90caf9; }
+        .val-blk { background: #e8f5e9; border-color: #a5d6a7; }
+        .overflow-blk { background: #f3e5f5; border-color: #ce93d8; max-width: 80px;}
+
+        .cell {
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            text-align: center;
+            height: 20px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cell:last-child { border-bottom: none; }
+        .cell.filled { font-weight: bold; color: #202224; }
+        .cell.empty { color: #bbb; font-style: italic; }
+
+        /* --- LOG WINDOW --- */
+        .log-window {
+            grid-column: 1 / -1;
+            background: #202224;
+            color: #00ff00;
+            font-family: monospace;
+            padding: 15px;
+            height: 120px;
+            overflow-y: auto;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="info-panel" id="infoText">
+    Hover over the map components to see how they work.
+</div>
+
+<div class="controls">
+    <button class="btn-add" onclick="insertAction()">Insert Random Key</button>
+    <button class="btn-add" onclick="insertSpecific()" style="background:#0277bd">Force Overflow (Bucket 0)</button>
+    <button class="btn-del" onclick="deleteAction()">Delete Random Key</button>
+    <button class="btn-grow" onclick="growAction()">Force Growth</button>
+    <button class="btn-reset" onclick="resetMap()">Reset Map</button>
+</div>
+
+<div class="main-container">
+
+    <div>
+        <div class="hmap-box">
+            <div class="struct-header">hmap (Runtime Header)</div>
+
+            <div class="struct-field" onmouseover="explain('count')" onmouseout="resetExplain()">
+                <span>count</span> <span class="val-dynamic" id="h-count">0</span>
+            </div>
+            <div class="struct-field" onmouseover="explain('flags')" onmouseout="resetExplain()">
+                <span>flags</span> <span class="val-dynamic">0</span>
+            </div>
+            <div class="struct-field" onmouseover="explain('B')" onmouseout="resetExplain()">
+                <span>B (log_2 buckets)</span> <span class="val-dynamic" id="h-b">2</span>
+            </div>
+            <div class="struct-field" onmouseover="explain('noverflow')" onmouseout="resetExplain()">
+                <span>noverflow</span> <span class="val-dynamic" id="h-nover">0</span>
+            </div>
+            <div class="struct-field" onmouseover="explain('buckets')" onmouseout="resetExplain()">
+                <span>buckets</span> <span class="val-dynamic">0x204..</span>
+            </div>
+            <div class="struct-field" onmouseover="explain('oldbuckets')" onmouseout="resetExplain()">
+                <span>oldbuckets</span> <span class="val-dynamic" id="h-old">nil</span>
+            </div>
+        </div>
+        <div style="margin-top:10px; font-size:0.85rem; color:#666; text-align: center;">
+            Load Factor: <span id="h-load" style="font-weight:bold">0.00</span><br>
+            (Grows > 6.5)
+        </div>
+    </div>
+
+    <div class="right-col">
+
+        <div class="hash-visual" onmouseover="explain('hash')" onmouseout="resetExplain()">
+            <div style="font-weight:bold; color:#333;">Last Key Hash:</div>
+            <div class="hash-bits" id="hash-display">
+                <span style="color:#ccc">Waiting for input...</span>
+            </div>
+            <div class="hash-label">
+                <span style="color:var(--accent)">■ HOB (Tophash)</span> &nbsp;
+                <span style="color:var(--go-blue)">■ LOB (Bucket Idx)</span>
+            </div>
+        </div>
+
+        <div class="buckets-grid" id="buckets-container">
+        </div>
+    </div>
+
+    <div class="xray-container">
+        <h3 style="margin-top:0; margin-bottom:5px; color: var(--go-blue)">
+            Memory Layout: Bucket <span id="xray-id">0</span>
+        </h3>
+        <p style="margin:0 0 10px 0; font-size:0.85rem; color:#666">
+            Go organizes memory as Struct{ Tophash[8], Keys[8], Values[8] } to avoid padding bytes.
+        </p>
+
+        <div class="memory-layout">
+            <div class="mem-block tophash-blk" onmouseover="explain('tophash')" onmouseout="resetExplain()">
+                <div class="mem-header">tophash [8]</div>
+                <div id="xr-tophash"></div>
+            </div>
+            <div class="mem-block key-blk" onmouseover="explain('keys')" onmouseout="resetExplain()">
+                <div class="mem-header">keys [8]</div>
+                <div id="xr-keys"></div>
+            </div>
+            <div class="mem-block val-blk" onmouseover="explain('values')" onmouseout="resetExplain()">
+                <div class="mem-header">values [8]</div>
+                <div id="xr-values"></div>
+            </div>
+            <div class="mem-block overflow-blk" onmouseover="explain('overflow')" onmouseout="resetExplain()">
+                <div class="mem-header">overflow *</div>
+                <div class="cell" id="xr-overflow" style="padding-top:40px; font-size:1.5rem;">nil</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-window" id="sys-log">
+        > System ready. Map initialized with B=2 (4 buckets).
+    </div>
+
+</div>
+
+<script>
+    // --- CONFIG & STATE ---
+    let B = 2;
+    let count = 0;
+    let noverflow = 0;
+    // buckets[bucketIndex] = [ {tophash[], keys[], vals[], count}, {overflow_bucket}, ... ]
+    let buckets = [];
+    let selectedBucketIdx = 0;
+    let selectedChainIdx = 0;
+
+    // --- EXPLANATIONS ---
+    const infoBox = document.getElementById('infoText');
+    const explanations = {
+        'count': "<strong>Count:</strong> Total number of live items in the map.",
+        'flags': "<strong>Flags:</strong> Tracks state like 'writing' (panic on concurrent write) or 'iterator active'.",
+        'B': "<strong>B:</strong> Log_2 of buckets. 2^B = Total Buckets. Determines mask for LOB.",
+        'noverflow': "<strong>NOverflow:</strong> Approximate count of overflow buckets created.",
+        'buckets': "<strong>Buckets Pointer:</strong> Points to the start of the contiguous bucket array in memory.",
+        'oldbuckets': "<strong>OldBuckets:</strong> Non-nil only during growth. Points to the old array while data is evacuated.",
+        'hash': "<strong>Hash Split:</strong> High bits (HOB) become Tophash. Low bits (LOB) determine the Bucket Index.",
+        'tophash': "<strong>Tophash Array:</strong> First 8 bytes. CPU checks this first. If byte doesn't match, it skips the key (Fast Fail).",
+        'keys': "<strong>Keys Array:</strong> Stored together to eliminate padding. e.g. int8 keys next to int8 keys.",
+        'values': "<strong>Values Array:</strong> Stored after keys.",
+        'overflow': "<strong>Overflow Pointer:</strong> Links to the next bucket if this one is full (Chaining)."
+    };
+
+    function explain(key) { if(explanations[key]) infoBox.innerHTML = explanations[key]; }
+    function resetExplain() { infoBox.innerHTML = "Hover over the map components to see how they work."; }
+
+    // --- CORE LOGIC ---
+    function initMap() {
+        count = 0;
+        noverflow = 0;
+        createBuckets(1 << B);
+        renderUI();
+        log("Map Reset.");
+    }
+
+    function createBuckets(num) {
+        buckets = [];
+        for(let i=0; i<num; i++) buckets.push([createBucketStruct()]);
+    }
+
+    function createBucketStruct() {
+        return {
+            tophash: new Array(8).fill(0),
+            keys: new Array(8).fill(null),
+            vals: new Array(8).fill(null),
+            filled: 0
+        };
+    }
+
+    function insertAction() {
+        const key = "k-" + Math.floor(Math.random() * 1000);
+        const val = Math.floor(Math.random() * 100);
+        put(key, val);
+    }
+
+    function insertSpecific() {
+        // Force index 0
+        const key = "F-" + Math.floor(Math.random() * 100);
+        put(key, 999, true);
+    }
+
+    function put(key, val, forceZero = false) {
+        const numBuckets = 1 << B;
+        let hash = 0;
+        // Mock hash
+        if(forceZero) {
+            hash = 0x100; // LOB will be 0, HOB will be 1
+        } else {
+            for(let i=0; i<key.length; i++) hash = (hash << 5) - hash + key.charCodeAt(i);
+            hash = Math.abs(hash);
+        }
+
+        const lob = hash & (numBuckets - 1);
+        let hob = (hash >> 8) & 0xFF;
+        if(hob < 5) hob = 5; // Reserve 0-4 for states
+
+        updateHashVisual(hash, B, hob, lob);
+
+        let chain = buckets[lob];
+        let inserted = false;
+
+        // Try to find slot
+        for(let cIdx=0; cIdx<chain.length; cIdx++) {
+            let b = chain[cIdx];
+            for(let i=0; i<8; i++) {
+                if(b.keys[i] === null) {
+                    b.keys[i] = key;
+                    b.vals[i] = val;
+                    b.tophash[i] = hob;
+                    b.filled++;
+                    count++;
+                    inserted = true;
+                    log(`Put(${key}): Bucket [${lob}], Slot [${i}]`);
+                    selectBucket(lob, cIdx);
+                    break;
+                }
+            }
+            if(inserted) break;
+        }
+
+        // Overflow
+        if(!inserted) {
+            log(`Bucket [${lob}] Full. Creating Overflow.`);
+            let newB = createBucketStruct();
+            newB.keys[0] = key;
+            newB.vals[0] = val;
+            newB.tophash[0] = hob;
+            newB.filled++;
+            chain.push(newB);
+            count++;
+            noverflow++;
+            selectBucket(lob, chain.length - 1);
+        }
+
+        renderUI();
+    }
+
+    function deleteAction() {
+        if(count === 0) return;
+        // Find first non-empty
+        for(let i=0; i<buckets.length; i++) {
+            for(let c=0; c<buckets[i].length; c++) {
+                let b = buckets[i][c];
+                if(b.filled > 0) {
+                    for(let k=7; k>=0; k--) {
+                        if(b.keys[k] !== null) {
+                            log(`Deleted ${b.keys[k]}`);
+                            b.keys[k] = null;
+                            b.vals[k] = null;
+                            b.tophash[k] = 0;
+                            b.filled--;
+                            count--;
+                            selectBucket(i, c);
+                            renderUI();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function growAction() {
+        log("--- EVACUATION TRIGGERED ---");
+        let oldBuckets = buckets;
+        B++;
+        count = 0;
+        noverflow = 0;
+        createBuckets(1 << B);
+
+        // Re-hash all
+        oldBuckets.forEach(chain => {
+            chain.forEach(b => {
+                for(let i=0; i<8; i++) {
+                    if(b.keys[i] !== null) put(b.keys[i], b.vals[i]);
+                }
+            });
+        });
+
+        document.getElementById('h-old').innerText = "0xPTR (Evacuating...)";
+        setTimeout(() => document.getElementById('h-old').innerText = "nil", 2000);
+        log(`Growth Complete. B=${B}`);
+        renderUI();
+    }
+
+    function resetMap() {
+        B=2;
+        initMap();
+    }
+
+    // --- RENDERERS ---
+
+    function updateHashVisual(hash, B, hob, lob) {
+        const bin = hash.toString(2).padStart(16, '0');
+        // Split based on B
+        // The last B bits are LOB. The 8 bits before that are HOB.
+        const len = bin.length;
+        const lobStr = bin.slice(len - B);
+        const hobStr = bin.slice(len - B - 8, len - B);
+        const rest = bin.slice(0, len - B - 8);
+
+        const html = `
+                <span style="color:#ccc">..${rest}</span>
+                <span class="bit-hob">${hobStr}</span>
+                <span class="bit-lob">${lobStr}</span>
+            `;
+        document.getElementById('hash-display').innerHTML = html;
+    }
+
+    function renderUI() {
+        // 1. HMAP Stats
+        document.getElementById('h-count').innerText = count;
+        document.getElementById('h-b').innerText = B;
+        document.getElementById('h-nover').innerText = noverflow;
+        document.getElementById('h-load').innerText = (count / (1<<B)).toFixed(2);
+
+        // 2. Buckets
+        const container = document.getElementById('buckets-container');
+        container.innerHTML = '';
+
+        buckets.forEach((chain, bIdx) => {
+            const stack = document.createElement('div');
+            stack.className = 'bucket-stack';
+
+            chain.forEach((b, cIdx) => {
+                const el = document.createElement('div');
+                el.className = 'bucket';
+                if(cIdx > 0) el.classList.add('overflow');
+                if(bIdx === selectedBucketIdx && cIdx === selectedChainIdx) el.classList.add('selected');
+
+                el.onclick = () => selectBucket(bIdx, cIdx);
+
+                const title = document.createElement('div');
+                title.className = 'bucket-title';
+                title.innerText = cIdx === 0 ? `Bucket ${bIdx}` : `Overflow`;
+
+                const miniGrid = document.createElement('div');
+                miniGrid.className = 'slots-mini';
+                for(let i=0; i<8; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'slot-dot' + (b.keys[i]!==null ? ' filled' : '');
+                    miniGrid.appendChild(dot);
+                }
+
+                el.appendChild(title);
+                el.appendChild(miniGrid);
+
+                if(cIdx > 0) {
+                    const link = document.createElement('div');
+                    link.className = 'overflow-link';
+                    stack.appendChild(link);
+                }
+                stack.appendChild(el);
+            });
+            container.appendChild(stack);
+        });
+
+        // 3. X-Ray
+        renderXRay();
+    }
+
+    function selectBucket(bIdx, cIdx) {
+        selectedBucketIdx = bIdx;
+        selectedChainIdx = cIdx;
+        renderUI();
+    }
+
+    function renderXRay() {
+        const bIdx = selectedBucketIdx;
+        const cIdx = selectedChainIdx;
+        const label = document.getElementById('xray-id');
+        label.innerText = `${bIdx} ${cIdx>0 ? '(Overflow)' : ''}`;
+
+        const thC = document.getElementById('xr-tophash');
+        const kC = document.getElementById('xr-keys');
+        const vC = document.getElementById('xr-values');
+        const ovC = document.getElementById('xr-overflow');
+
+        thC.innerHTML = ''; kC.innerHTML = ''; vC.innerHTML = '';
+
+        if(!buckets[bIdx] || !buckets[bIdx][cIdx]) return;
+
+        const b = buckets[bIdx][cIdx];
+
+        for(let i=0; i<8; i++) {
+            const filled = b.keys[i] !== null;
+
+            const th = document.createElement('div');
+            th.className = 'cell' + (filled ? ' filled' : ' empty');
+            th.innerText = filled ? '0x'+b.tophash[i].toString(16).toUpperCase() : '0';
+            thC.appendChild(th);
+
+            const k = document.createElement('div');
+            k.className = 'cell' + (filled ? ' filled' : ' empty');
+            k.innerText = filled ? b.keys[i] : 'nil';
+            kC.appendChild(k);
+
+            const v = document.createElement('div');
+            v.className = 'cell' + (filled ? ' filled' : ' empty');
+            v.innerText = filled ? b.vals[i] : 'nil';
+            vC.appendChild(v);
+        }
+
+        const hasNext = buckets[bIdx][cIdx+1];
+        ovC.innerHTML = hasNext ? "<span style='color:var(--accent); font-weight:bold'>&rarr;</span>" : "nil";
+    }
+
+    function log(msg) {
+        const l = document.getElementById('sys-log');
+        l.innerHTML += `<div>> ${msg}</div>`;
+        l.scrollTop = l.scrollHeight;
+    }
+
+    // Start
+    initMap();
+
+</script>
+</body>
+</html>
