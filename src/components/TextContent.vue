@@ -47,7 +47,7 @@ const sanitizedHtml = computed(() => {
 }
 
 :deep(ul) {
-  @apply text-sm space-y-2 list-disc list-inside;
+  @apply text-sm space-y-2 list-disc;
 }
 
 :deep(li) {

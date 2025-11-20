@@ -274,7 +274,7 @@ initMap();
     </div>
 
     <!-- Main Container -->
-    <div class="grid grid-cols-[280px_1fr] gap-8 max-w-[1300px] w-full">
+    <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 max-w-[1300px] w-full">
 
       <!-- Left: HMAP Struct -->
       <div>
@@ -396,7 +396,7 @@ initMap();
       </div>
 
       <!-- X-Ray Container -->
-      <div class="col-span-2 bg-white border-2 border-[var(--go-blue)] rounded-lg p-5 mt-5 fade-in">
+      <div class="col-span-1 md:col-span-2 bg-white border-2 border-[var(--go-blue)] rounded-lg p-5 mt-5 fade-in">
         <h3 class="mt-0 mb-1.5 text-[var(--go-blue)]">
           Memory Layout: Bucket {{ selectedBucketIdx }} {{ selectedChainIdx > 0 ? '(Overflow)' : '' }}
         </h3>
