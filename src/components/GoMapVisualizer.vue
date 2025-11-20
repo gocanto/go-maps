@@ -9,7 +9,8 @@ const noverflow = ref(0);
 const buckets = ref<BucketChain[]>([]);
 const selectedBucketIdx = ref(0);
 const selectedChainIdx = ref(0);
-const infoText = ref('Hover over the map components to see how they work.');
+const infoText = ref<string>('Hover over the map components to see how they work.');
+const infoIsHtml = ref(false);
 const logs = ref<string[]>(['> System ready. Map initialized with B=2 (4 buckets).']);
 const lastHash = ref<HashInfo | null>(null);
 const oldBucketsPtr = ref('nil');
@@ -72,10 +73,12 @@ function log(msg: string) {
 
 function explain(key: ExplanationKey) {
   infoText.value = explanations[key];
+  infoIsHtml.value = true;
 }
 
 function resetExplain() {
   infoText.value = 'Hover over the map components to see how they work.';
+  infoIsHtml.value = false;
 }
 
 function updateHashVisual(hash: number, b: number, hob: number, lob: number) {
@@ -208,9 +211,9 @@ function selectBucket(bIdx: number, cIdx: number) {
   selectedChainIdx.value = cIdx;
 }
 
-function getHashDisplay() {
+const hashDisplayParts = computed(() => {
   if (!lastHash.value) {
-    return '<span class="text-gray-400">Waiting for input...</span>';
+    return null;
   }
 
   const bin = lastHash.value.binary;
@@ -220,12 +223,12 @@ function getHashDisplay() {
   const hobStr = bin.slice(len - b - 8, len - b);
   const rest = bin.slice(0, len - b - 8);
 
-  return `
-    <span class="text-gray-400">..${rest}</span>
-    <span class="bit-hob">${hobStr}</span>
-    <span class="bit-lob">${lobStr}</span>
-  `;
-}
+  return {
+    rest,
+    hob: hobStr,
+    lob: lobStr
+  };
+});
 
 // Initialize on mount
 initMap();
@@ -236,38 +239,40 @@ initMap();
     <!-- Info Panel -->
     <div
       class="w-full max-w-[1200px] bg-[#333] text-white px-4 py-4 rounded-lg min-h-[50px] flex items-center justify-center text-center text-lg shadow-md sticky top-0 z-[100] mb-5"
-      v-html="infoText"
-    ></div>
+    >
+      <span v-if="infoIsHtml" v-html="infoText"></span>
+      <span v-else>{{ infoText }}</span>
+    </div>
 
     <!-- Controls -->
     <div class="bg-white p-4 rounded-lg shadow-sm mb-5 flex gap-2.5 flex-wrap justify-center border-t-4 border-[var(--go-blue)]">
       <button
-        @click="insertAction"
         class="px-5 py-2.5 border-none rounded cursor-pointer font-bold text-white text-sm bg-[#2e7d32] active:scale-95 transition-transform"
+        @click="insertAction"
       >
         Insert Random Key
       </button>
       <button
-        @click="insertSpecific"
         class="px-5 py-2.5 border-none rounded cursor-pointer font-bold text-white text-sm bg-[#0277bd] active:scale-95 transition-transform"
+        @click="insertSpecific"
       >
         Force Overflow (Bucket 0)
       </button>
       <button
-        @click="deleteAction"
         class="px-5 py-2.5 border-none rounded cursor-pointer font-bold text-white text-sm bg-[#c62828] active:scale-95 transition-transform"
+        @click="deleteAction"
       >
         Delete Random Key
       </button>
       <button
-        @click="growAction"
         class="px-5 py-2.5 border-none rounded cursor-pointer font-bold text-white text-sm bg-[var(--go-black)] active:scale-95 transition-transform"
+        @click="growAction"
       >
         Force Growth
       </button>
       <button
-        @click="resetMap"
         class="px-5 py-2.5 border-none rounded cursor-pointer font-bold text-white text-sm bg-[#757575] active:scale-95 transition-transform"
+        @click="resetMap"
       >
         Reset Map
       </button>
@@ -354,7 +359,14 @@ initMap();
           @mouseout="resetExplain()"
         >
           <div class="font-bold text-[#333] font-sans">Last Key Hash:</div>
-          <div class="text-lg tracking-wide" v-html="getHashDisplay()"></div>
+          <div class="text-lg tracking-wide">
+            <template v-if="hashDisplayParts">
+              <span class="text-gray-400">..{{ hashDisplayParts.rest }}</span>
+              <span class="bit-hob">{{ hashDisplayParts.hob }}</span>
+              <span class="bit-lob">{{ hashDisplayParts.lob }}</span>
+            </template>
+            <span v-else class="text-gray-400">Waiting for input...</span>
+          </div>
           <div class="ml-auto font-sans text-xs text-gray-600">
             <span style="color:var(--accent)">■ HOB (Tophash)</span> &nbsp;
             <span style="color:var(--go-blue)">■ LOB (Bucket Idx)</span>
@@ -371,12 +383,12 @@ initMap();
             <template v-for="(bucket, cIdx) in chain" :key="`${bIdx}-${cIdx}`">
               <div v-if="cIdx > 0" class="overflow-link"></div>
               <div
-                @click="selectBucket(bIdx, cIdx)"
                 class="w-[100px] bg-white border-2 border-gray-300 rounded-md p-2 cursor-pointer transition-all hover:border-[var(--go-blue)] hover:-translate-y-0.5 hover:shadow-md"
                 :class="{
                   'selected border-[var(--go-blue)] bg-[#e1f5fe] scale-105 shadow-[0_0_0_3px_rgba(0,173,216,0.3)]': bIdx === selectedBucketIdx && cIdx === selectedChainIdx,
                   'overflow border-[var(--overflow)] bg-[#fff8e1]': cIdx > 0
                 }"
+                @click="selectBucket(bIdx, cIdx)"
               >
                 <div class="text-xs text-center mb-1.5 text-gray-600 font-bold">
                   {{ cIdx === 0 ? `Bucket ${bIdx}` : 'Overflow' }}

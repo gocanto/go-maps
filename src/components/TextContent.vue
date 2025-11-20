@@ -27,6 +27,7 @@ const sanitizedHtml = computed(() => {
 <template>
   <div class="w-80 bg-gray-50 border border-gray-200 rounded-lg p-6 overflow-y-auto">
     <h2 class="text-2xl font-bold mb-4 text-gray-800">{{ title }}</h2>
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div
       class="text-gray-700 space-y-4 prose prose-sm max-w-none"
       v-html="sanitizedHtml"
