@@ -5,16 +5,17 @@
 
 An interactive educational tool built with **Vue.js** and **Vite** that simulates the internal mechanics of the Go (Golang) `map` data structure.
 
-This project aims to demystify the "black box" of Go maps by visualising memory layout, bucket allocation, hashing strategies, and collision resolution in real-time.
+This project aims to demystify the "black box" of Go maps by visualising the memory layout, bucket allocation, hashing strategies, and collision resolution in real time.
 
-![Project Screenshot](https://github.com/user-attachments/assets/32dc36c2-602d-4874-88d1-97a5d650b38f)
+<img width="3024" height="1654" alt="maps" src="https://github.com/user-attachments/assets/75fb2cf0-19e3-4170-860e-93bfadb79076" />
+
 
 ## 📖 About The Project
 
 In Go, maps are efficient and easy to use, but their internal implementation is a sophisticated engineering feat. This application simulates the **Go Runtime** logic to demonstrate:
 
 * **The `hmap` Header:** How metadata like `count` and `B` (log buckets) manage the structure.
-* **Bucket Architecture:** Visualizing fixed-size buckets that hold 8 key/value pairs.
+* **Bucket Architecture:** Visualising fixed-size buckets that hold eight key/value pairs.
 * **Smart Hashing:** How the hash is split into High-Order Bits (Tophash) and Low-Order Bits (Bucket Index).
 * **Memory Optimization:** How keys and values are packed separately (`keys[8]`, `values[8]`) to eliminate padding.
 * **Overflow Chaining:** How the map handles collisions by linking to overflow buckets.
@@ -24,7 +25,7 @@ In Go, maps are efficient and easy to use, but their internal implementation is 
 * **Interactive Insertion:** Add random or specific keys to see how they are hashed and placed.
 * **Visual Hashing:** Watch the binary split of the hash between **LOB** (Bucket selection) and **HOB** (Tophash).
 * **Memory X-Ray:** Click on any bucket to inspect its internal memory layout (Tophash arrays vs Key arrays).
-* **Overflow Simulation:** Force keys into specific buckets to visualize linked-list chaining.
+* **Overflow Simulation:** Force keys into specific buckets to visualise linked-list chaining.
 * **Growth Trigger:** Simulate "Evacuation" by forcing the map to resize when the load factor exceeds 6.5.
 
 ## 🛠️ Tech Stack
@@ -35,7 +36,7 @@ In Go, maps are efficient and easy to use, but their internal implementation is 
 
 ## 🚀 Getting Started
 
-Follow these steps to get a local copy up and running.
+You can follow these steps to get a local copy up and running.
 
 ### Prerequisites
 
@@ -46,8 +47,8 @@ Follow these steps to get a local copy up and running.
 
 1.  **Clone the repository**
     ```bash
-    git clone [https://github.com/your-username/go-map-visualizer.git](https://github.com/your-username/go-map-visualizer.git)
-    cd go-map-visualizer
+    git@github.com:gocanto/go-maps.git
+    cd go-maps
     ```
 
 2.  **Install dependencies**
@@ -66,10 +67,10 @@ Follow these steps to get a local copy up and running.
 ## 🧠 Concepts Covered
 
 ### 1. The Bucket Structure
-Unlike generic hash maps, Go uses buckets. Each bucket is a fixed-size memory block holding exactly **8 key/value pairs**.
+Unlike generic hash maps, Go uses buckets. Each bucket is a fixed-size memory block holding exactly **eight key/value pairs**.
 
 ### 2. Memory Layout
-Inside a bucket, data is packed as `[8 Tophashes] + [8 Keys] + [8 Values]`. This structure eliminates padding bytes between keys and values, optimizing CPU cache locality.
+Inside a bucket, data is packed as `[8 Tophashes] + [8 Keys] + [8 Values]`. This structure eliminates padding bytes between keys and values, optimising CPU cache locality.
 
 ### 3. Collision Resolution
 Go uses **Chaining**. If a bucket fills up (8 items), it allocates a new "overflow bucket" and links to it, creating a linked list of blocks rather than individual nodes.
@@ -79,7 +80,7 @@ The map grows when the average **Load Factor exceeds 6.5**. It allocates a doubl
 
 ## Contributing
 
-Please, feel free to fork this repository to contribute to it by submitting a functionalities/bugs-fixes pull request to enhance it.
+Please feel free to fork this repository and submit a pull request to enhance it with functionality or bug fixes.
 
 ## License
 
@@ -90,7 +91,7 @@ Please see [License File](https://github.com/gocanto/go-maps/blob/main/LICENSE) 
 
 There are many ways you can support my open source work. There is no correct answer, so the choice is yours.
 
-Nevertheless :grinning:, I would propose the following.
+Nevertheless, I propose the following.
 
 - :arrow_up: Follow me on [Twitter](https://twitter.com/gocanto).
 - :star: Star the repository.
