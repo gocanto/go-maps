@@ -81,6 +81,10 @@ The map grows when the average **Load Factor exceeds 6.5**. It allocates a doubl
 
 Please, feel free to fork this repository to contribute to it by submitting a functionalities/bugs-fixes pull request to enhance it.
 
+## License
+
+Please see [License File](https://github.com/gocanto/go-maps/blob/main/LICENSE) for more information.
+
 
 ## How can I thank you?
 
